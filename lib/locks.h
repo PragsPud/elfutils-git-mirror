@@ -56,6 +56,10 @@
 # define mutex_fini(lock)		MUTEX_CALL (destroy (&lock))
 # define once(once_control, init_routine)  \
   ONCE_CALL (once (&once_control, init_routine))
+# define atomic_load_acquire(ptr) \
+  __atomic_load_n ((ptr), __ATOMIC_ACQUIRE)
+# define atomic_store_release(ptr, val) \
+  __atomic_store_n ((ptr), (val), __ATOMIC_RELEASE)
 #else
 /* Eventually we will allow multi-threaded applications to use the
    libraries.  Therefore we will add the necessary locking although
@@ -73,6 +77,8 @@
 # define mutex_fini(lock) ((void) (lock))
 # define once_define(class,name)
 # define once(once_control, init_routine)       init_routine()
+# define atomic_load_acquire(ptr) (*(ptr))
+# define atomic_store_release(ptr, val) ((void) (*(ptr) = (val)))
 #endif  /* USE_LOCKS */
 
 #endif  /* locks.h */
