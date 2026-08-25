@@ -198,8 +198,9 @@ load_shdr_wrlock (Elf_Scn *scn)
 
   /* Set the pointers in the `scn's.  */
   for (size_t cnt = 0; cnt < shnum; ++cnt)
-    elf->state.ELFW(elf,LIBELFBITS).scns.data[cnt].shdr.ELFW(e,LIBELFBITS)
-      = &elf->state.ELFW(elf,LIBELFBITS).shdr[cnt];
+    atomic_store_release
+      (&elf->state.ELFW(elf,LIBELFBITS).scns.data[cnt].shdr.ELFW(e,LIBELFBITS),
+       &elf->state.ELFW(elf,LIBELFBITS).shdr[cnt]);
 
   result = scn->shdr.ELFW(e,LIBELFBITS);
   assert (result != NULL);
@@ -275,9 +276,13 @@ elfw2(LIBELFBITS,getshdr) (Elf_Scn *scn)
   if (!scn_valid (scn))
     return NULL;
 
-  rwlock_rdlock (scn->elf->lock);
-  result = __elfw2(LIBELFBITS,getshdr_rdlock) (scn);
-  rwlock_unlock (scn->elf->lock);
+  result = atomic_load_acquire (&scn->shdr.ELFW(e,LIBELFBITS));
+  if (result == NULL)
+    {
+      rwlock_wrlock (scn->elf->lock);
+      result = __elfw2(LIBELFBITS,getshdr_wrlock) (scn);
+      rwlock_unlock (scn->elf->lock);
+    }
 
   return result;
 }
