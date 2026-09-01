@@ -989,20 +989,18 @@ read_srclines (Dwarf *dbg,
 		    const char **dirarray
 		      = (const char **) &((*filesp)->info[nfiles]);
 
+		    /* Note in case of bad DWARF4 with missing
+		       DW_AT_comp_dir there might not be a (zero)
+		       directory name.  We cannot do much in this
+		       case.  Just keep the file relative.  */
 		    const char *dname = dirarray[diridx];
-		    size_t dnamelen = strlen (dname);
+		    size_t dnamelen = dname != NULL ? strlen (dname) : 0;
 
 		    new_file->info.name =
 		      libdw_alloc (dbg, char, 1, (dnamelen + fnamelen + 2));
 		    char *cp = new_file->info.name;
 
 		    if (dname != NULL)
-
-		      /* This value could be NULL in case the
-			 DW_AT_comp_dir was not present.  We
-			 cannot do much in this case.  Just
-			 keep the file relative.  */
-
 		      {
 			cp = stpcpy (cp, dname);
 			*cp++ = '/';
