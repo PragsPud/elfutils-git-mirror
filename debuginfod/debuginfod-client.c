@@ -1197,12 +1197,16 @@ perform_queries(CURLM *curlm, CURL **target_handle, struct handle_data *data, de
                     pa = (dl >= (double)(LONG_MAX+1UL) ? LONG_MAX : (long)dl);
 #endif
                 }
-              
-              if ((*c->progressfn) (c, pa, dl_size == -1 ? 0 : dl_size))
-		{
-		  c->progressfn_cancel = true;
-		  break;
-		}
+            }
+
+          /* Invoke the callback even before committing to a server, so
+             the caller can cancel while still connecting or waiting for
+             the first response bytes.  With no target handle yet, dl_size
+             is still -1, so pass 0 to signal the "early stage". */
+          if ((*c->progressfn) (c, pa, dl_size == -1 ? 0 : dl_size))
+            {
+              c->progressfn_cancel = true;
+              break;
             }
         }
       /* Check to see if we are downloading something which exceeds maxsize, if set.*/
